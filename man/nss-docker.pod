@@ -1,0 +1,32 @@
+# pod2man --section=1 --release="nss-docker" --center=" " --date="13 Oct 2015"
+#
+
+=head1 NAME
+
+nss-docker - nss module for finding Docker containers
+
+=head1 SYNOPSIS
+
+libnss_docker.so.1
+
+=head1 DESCRIPTION
+
+XXX
+
+=head1 SEE ALSO
+
+docker(1), nsswitch.conf(5)
+
+=head1 BUGS
+
+If you find the bug or want to implement new features, please report it at
+L<https://github.com/dex4er/nss-docker/issues>
+
+=head1 AUTHORS
+
+Copyright (c) 2015 Piotr Roszatycki <dexter@debian.org>
+
+=head1 COPYING
+
+nss-docker is distributed under the GNU Lesser General Public License (LGPL
+2.1 or greater).

@@ -1,0 +1,3 @@
+[![Build Status](https://travis-ci.org/dex4er/nss-docker.png?branch=master)](https://travis-ci.org/dex4er/nss-docker)
+
+...
