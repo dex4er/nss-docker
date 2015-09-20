@@ -10,13 +10,16 @@
 #define SUN_LEN(su) (sizeof(*(su)) - sizeof((su)->sun_path) + strlen((su)->sun_path))
 #endif
 
+#define DOCKER_API_REQUEST "GET /v%s/containers/%s/json HTTP/1.0\015\012\015\012"
+
+
 int main(int argc, char *argv[]) {
     int sockfd, servlen, n;
     struct sockaddr_un serv_addr;
-    char buffer[82];
+    char buffer[10240];
 
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s path message\n", argv[0]);
+    if (argc != 4) {
+        fprintf(stderr, "Usage: %s docker_socket api_version container_id\n", argv[0]);
         exit(2);
     }
 
@@ -35,14 +38,14 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    memset(buffer, 0, 82);
-    strncpy(buffer, argv[2], 80);
+    memset(buffer, 0, 10240);
+    snprintf(buffer, 10240, DOCKER_API_REQUEST, argv[2], argv[3]);
     if (write(sockfd, buffer, strlen(buffer)) < 0) {
         perror("write(newsockfd)");
         exit(1);
     }
 
-    n = read(sockfd, buffer, 80);
+    n = read(sockfd, buffer, 10240);
     if (write(1, buffer, n) < 0) {
         perror("write(newsockfd)");
         exit(1);
