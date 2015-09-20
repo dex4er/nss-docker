@@ -3,6 +3,6 @@
 ./autogen.sh
 ./configure
 
-( cd man && make nss-docker.1 )
+( cd man && make nss-docker.8 )
 
 make dist
