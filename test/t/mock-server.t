@@ -11,7 +11,7 @@ if ! is_root; then
     skip $tap_plan "not root"
 else
 
-    $srcdir/chroot.sh $testtree /bin/test-docker-api-server /tmp/sock test 1.2.3.4 >$testtree/mock-server.log 2>&1 &
+    $srcdir/chroot.sh $testtree /bin/test-docker-api-server 1 /tmp/sock test 1.2.3.4 >$testtree/mock-server.log 2>&1 &
     server_pid=$!
 
     sleep 3

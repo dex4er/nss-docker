@@ -15,7 +15,7 @@
 
 
 int main(int argc, char *argv[]) {
-    int sockfd, newsockfd, servlen, n;
+    int sockfd, newsockfd, servlen, n, i, how_many;
     socklen_t clilen;
     struct sockaddr_un cli_addr, serv_addr, name_addr;
     socklen_t namelen;
@@ -23,10 +23,12 @@ int main(int argc, char *argv[]) {
     char *begin_container, *end_container;
     size_t containerlen;
 
-    if (argc != 3 && argc != 4) {
-        fprintf(stderr, "Usage: %s docker_socket container_id ip_address\n", argv[0]);
+    if (argc != 4 && argc != 5) {
+        fprintf(stderr, "Usage: %s how_many docker_socket container_id ip_address\n", argv[0]);
         exit(2);
     }
+
+    how_many = atoi(argv[1]);
 
     if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
         perror("socket");
@@ -35,7 +37,7 @@ int main(int argc, char *argv[]) {
 
     memset((char *) &serv_addr, 0, sizeof(serv_addr));
     serv_addr.sun_family = AF_UNIX;
-    strcpy(serv_addr.sun_path, argv[1]);
+    strcpy(serv_addr.sun_path, argv[2]);
     servlen = SUN_LEN(&serv_addr);
     if (bind(sockfd, (struct sockaddr *)&serv_addr, servlen) < 0) {
         perror("bind");
@@ -50,41 +52,46 @@ int main(int argc, char *argv[]) {
 
     listen(sockfd, 1);
     clilen = sizeof(cli_addr);
-    newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-    if (newsockfd < 0) {
-        perror("accept");
-        exit(1);
-    }
 
-    n = read(newsockfd, buffer, 10240);
-    if (write(1, buffer, n) < 0) {
-        perror("write(1)");
-        exit(1);
-    }
+    for (i = 0; how_many == 0 || i < how_many; i++) {
+        newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+        if (newsockfd < 0) {
+            perror("accept");
+            exit(1);
+        }
 
-    if ((begin_container = strstr(buffer, "/containers/")) == NULL) {
-        exit(1);
-    }
+        n = read(newsockfd, buffer, 10240);
+        if (write(1, buffer, n) < 0) {
+            perror("write(1)");
+            exit(1);
+        }
 
-    begin_container += sizeof("/containers/") - 1;
+        if ((begin_container = strstr(buffer, "/containers/")) == NULL) {
+            exit(1);
+        }
 
-    if ((end_container = index(begin_container, '/')) == NULL) {
-        exit(1);
-    }
+        begin_container += sizeof("/containers/") - 1;
 
-    *end_container = '\0';
+        if ((end_container = index(begin_container, '/')) == NULL) {
+            exit(1);
+        }
 
-    if ((containerlen = end_container - begin_container) == 0) {
-        sprintf(buffer, DOCKER_RESPONSE_NOTFOUND, "CONTAINER");
-    } else if (strncmp(begin_container, argv[2], containerlen) != 0) {
-        sprintf(buffer, DOCKER_RESPONSE_NOTFOUND, begin_container);
-    } else {
-        sprintf(buffer, DOCKER_RESPONSE_SUCCESS, argv[3], argv[2]);
-    }
+        *end_container = '\0';
 
-    if (write(newsockfd, buffer, strlen(buffer)) < 0) {
-        perror("write(newsockfd)");
-        exit(1);
+        if ((containerlen = end_container - begin_container) == 0) {
+            sprintf(buffer, DOCKER_RESPONSE_NOTFOUND, "CONTAINER");
+        } else if (strncmp(begin_container, argv[3], containerlen) != 0) {
+            sprintf(buffer, DOCKER_RESPONSE_NOTFOUND, begin_container);
+        } else {
+            sprintf(buffer, DOCKER_RESPONSE_SUCCESS, argv[4], argv[3]);
+        }
+
+        if (write(newsockfd, buffer, strlen(buffer)) < 0) {
+            perror("write(newsockfd)");
+            exit(1);
+        }
+
+        close(newsockfd);
     }
 
     return 0;
