@@ -2,7 +2,7 @@ SUBDIRS = src
 
 TESTS = \
     t/00echo.t \
-    t/socket-af_unix.t \
+    t/mock-server.t \
     #
 
 suffix =
