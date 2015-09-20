@@ -43,6 +43,9 @@
 #define DOCKER_API_VERSION "1.12"
 #endif
 
+#ifndef DOMAIN_SUFFIX
+#define DOMAIN_SUFFIX ".docker"
+#endif
 
 #define ALIGN(a) (((a+sizeof(void*)-1)/sizeof(void*))*sizeof(void*))
 
@@ -60,8 +63,9 @@ enum nss_status _nss_docker_gethostbyname3_r(
     struct hostent *result, char *buffer, size_t buflen, int *errnop,
     int *herrnop, int32_t *ttlp, char **canonp
 ) {
-    size_t idx, recvlen, ipaddresslen;
-    char *aliases, *addr_ptr, *addr_list, *begin_ipaddress, *end_ipaddress;
+    size_t idx, recvlen, hostnamelen, ipaddresslen;
+    char *aliases, *addr_ptr, *addr_list, *hostname_suffix, *begin_ipaddress, *end_ipaddress;
+    char hostname[256];
     char ipaddress[16];
     struct in_addr addr;
     int sockfd, servlen;
@@ -73,6 +77,29 @@ enum nss_status _nss_docker_gethostbyname3_r(
     if (af != AF_INET) {
         goto return_unavail_afnosupport;
     }
+
+    hostnamelen = strlen(name);
+
+    if (hostnamelen == 0) {
+        goto return_notfound;
+    }
+
+    if (hostnamelen > 255) {
+        hostnamelen = 255;
+    }
+
+    strncpy(hostname, name, sizeof(hostname));
+    hostname[hostnamelen] = '\0';
+
+    if ((hostname_suffix = strstr(hostname, DOMAIN_SUFFIX)) == NULL) {
+        goto return_notfound;
+    }
+
+    if (hostname_suffix[sizeof(DOMAIN_SUFFIX) - 1] != '\0') {
+        goto return_notfound;
+    }
+
+    *hostname_suffix = '\0';
 
     memset((char *) &serv_addr, 0, sizeof(serv_addr));
     serv_addr.sun_family = AF_UNIX;
@@ -87,7 +114,7 @@ enum nss_status _nss_docker_gethostbyname3_r(
         goto return_unavail_errno;
     }
 
-    snprintf(buffer_send, sizeof(buffer_send), DOCKER_API_REQUEST, name);
+    snprintf(buffer_send, sizeof(buffer_send), DOCKER_API_REQUEST, hostname);
 
     if (write(sockfd, buffer_send, strlen(buffer_send)) < 0) {
         goto return_unavail_errno;
@@ -137,9 +164,9 @@ enum nss_status _nss_docker_gethostbyname3_r(
     }
 
     result->h_name = buffer;
-    strcpy(result->h_name, name);
+    strcpy(result->h_name, hostname);
 
-    idx = ALIGN(strlen(name) + 1);
+    idx = ALIGN(strlen(hostname) + 1);
 
     aliases = buffer + idx;
     *(char **) aliases = NULL;
