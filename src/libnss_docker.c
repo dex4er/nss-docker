@@ -17,33 +17,125 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
  */
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <nss.h>
 #include <netdb.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 
+
+#ifndef DEGUB
+#define DEBUG 0
+#endif
+
+#ifndef DOCKER_SOCKET
+#define DOCKER_SOCKET "/var/run/docker.sock"
+#endif
+
+#ifndef DOCKER_API_VERSION
+#define DOCKER_API_VERSION "1.12"
+#endif
+
+
 #define ALIGN(a) (((a+sizeof(void*)-1)/sizeof(void*))*sizeof(void*))
+
+#ifndef SUN_LEN
+#define SUN_LEN(su) (sizeof(*(su)) - sizeof((su)->sun_path) + strlen((su)->sun_path))
+#endif
+
+#define DOCKER_API_REQUEST "GET /v" DOCKER_API_VERSION "/containers/%.32s/json HTTP/1.0\015\012\015\012"
+#define HTTP_404 "HTTP/1.0 404"
+#define FIND_IPADDRESS ",\"IPAddress\":\""
+
 
 enum nss_status _nss_docker_gethostbyname3_r(
     const char *name, int af,
     struct hostent *result, char *buffer, size_t buflen, int *errnop,
     int *herrnop, int32_t *ttlp, char **canonp
 ) {
-    size_t idx;
-    char *aliases, *addr_ptr, *addr_list;
-
+    size_t idx, recvlen, ipaddresslen;
+    char *aliases, *addr_ptr, *addr_list, *begin_ipaddress, *end_ipaddress;
+    char ipaddress[16];
     struct in_addr addr;
+    int sockfd, servlen;
+    struct sockaddr_un serv_addr;
+    char buffer_send[sizeof(DOCKER_API_REQUEST)+32], buffer_recv[10240];
+
     addr.s_addr = 127 + 1 * 256 + 2 * 256 * 256 + 3 * 256 * 256 * 256; // 127.1.2.3
 
-    fprintf(stderr, "_nss_docker_gethostbyname3_r(name=\"%s\", af=%d)\n", name, af);
+    if (DEBUG) fprintf(stderr, "_nss_docker_gethostbyname3_r(name=\"%s\", af=%d)\n", name, af);
 
     if (af != AF_INET) {
-        *errnop = EAFNOSUPPORT;
-        *herrnop = NO_DATA;
-        return NSS_STATUS_UNAVAIL;
+        goto return_unavail_afnosupport;
+    }
+
+    memset((char *) &serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sun_family = AF_UNIX;
+    strcpy(serv_addr.sun_path, DOCKER_SOCKET);
+    servlen = SUN_LEN(&serv_addr);
+
+    if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
+        goto return_unavail_errno;
+    }
+
+    if (connect(sockfd, (struct sockaddr *) &serv_addr, servlen) < 0) {
+        goto return_unavail_errno;
+    }
+
+    snprintf(buffer_send, sizeof(buffer_send), DOCKER_API_REQUEST, name);
+
+    if (write(sockfd, buffer_send, strlen(buffer_send)) < 0) {
+        goto return_unavail_errno;
+    }
+
+    if ((recvlen = read(sockfd, buffer_recv, sizeof(buffer_recv)-1)) <= 0) {
+        goto return_unavail_errno;
+    }
+
+    buffer_recv[recvlen] = '\0';
+
+    if (DEBUG) fwrite(buffer_recv, recvlen, 1, stderr);
+
+    if (strncmp(buffer_recv, HTTP_404, sizeof(HTTP_404)-1) == 0) {
+        goto return_notfound;
+    }
+
+    if ((begin_ipaddress = strstr(buffer_recv, FIND_IPADDRESS)) == NULL) {
+        goto return_unavail_badmsg;
+    }
+
+    begin_ipaddress += sizeof(FIND_IPADDRESS) - 1;
+
+    if (*begin_ipaddress == '"') {
+        goto return_notfound;
+    }
+
+    if ((end_ipaddress = index(begin_ipaddress, '"')) == NULL) {
+        goto return_unavail_badmsg;
+    }
+
+    if ((ipaddresslen = end_ipaddress - begin_ipaddress) > 15) {
+        goto return_unavail_badmsg;
+    }
+
+    if (ipaddresslen == 0) {
+        goto return_notfound;
+    }
+
+    strncpy(ipaddress, begin_ipaddress, ipaddresslen);
+    ipaddress[ipaddresslen] = '\0';
+
+    if (DEBUG) fprintf(stderr, "ipaddress=\"%s\"\n", ipaddress);
+
+    if (! inet_aton(ipaddress, &addr)) {
+        goto return_unavail_badmsg;
     }
 
     result->h_name = buffer;
@@ -71,6 +163,26 @@ enum nss_status _nss_docker_gethostbyname3_r(
     result->h_addr_list = (char **) addr_list;
 
     return NSS_STATUS_SUCCESS;
+
+return_unavail_afnosupport:
+    *errnop = EAFNOSUPPORT;
+    *herrnop = NO_DATA;
+    return NSS_STATUS_UNAVAIL;
+
+return_unavail_badmsg:
+    *errnop = EBADMSG;
+    *herrnop = NO_DATA;
+    return NSS_STATUS_UNAVAIL;
+
+return_unavail_errno:
+    *errnop = errno;
+    *herrnop = NO_DATA;
+    return NSS_STATUS_UNAVAIL;
+
+return_notfound:
+    *errnop = ENOENT;
+    *herrnop = HOST_NOT_FOUND;
+    return NSS_STATUS_NOTFOUND;
 }
 
 enum nss_status _nss_docker_gethostbyname2_r(
