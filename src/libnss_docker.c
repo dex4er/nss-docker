@@ -68,8 +68,6 @@ enum nss_status _nss_docker_gethostbyname3_r(
     struct sockaddr_un serv_addr;
     char buffer_send[sizeof(DOCKER_API_REQUEST)+32], buffer_recv[10240];
 
-    addr.s_addr = 127 + 1 * 256 + 2 * 256 * 256 + 3 * 256 * 256 * 256; // 127.1.2.3
-
     if (DEBUG) fprintf(stderr, "_nss_docker_gethostbyname3_r(name=\"%s\", af=%d)\n", name, af);
 
     if (af != AF_INET) {
