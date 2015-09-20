@@ -1,4 +1,4 @@
-# pod2man --section=1 --release="nss-docker" --center=" " --date="13 Oct 2015"
+# pod2man --section=1 --release="nss-docker" --center=" " --date="20 Oct 2015"
 #
 
 =head1 NAME
@@ -7,11 +7,17 @@ nss-docker - nss module for finding Docker containers
 
 =head1 SYNOPSIS
 
-libnss_docker.so.1
+libnss_docker.so.2
 
 =head1 DESCRIPTION
 
-XXX
+This is NSS module for finding Docker containers.
+
+=head1 FILES
+
+=head2 F</etc/nsswitch.conf>
+
+hosts: files docker [NOTFOUND=return] dns
 
 =head1 SEE ALSO
 
