@@ -64,7 +64,7 @@ enum nss_status _nss_docker_gethostbyname3_r(
     struct hostent *result, char *buffer, size_t buflen, int *errnop,
     int *herrnop, int32_t *ttlp, char **canonp
 ) {
-    size_t idx, recvlen, hostnamelen, ipaddresslen;
+    size_t idx, recvlen, hostnamelen, ipaddresslen, buffer_send_len;
     char *aliases, *addr_ptr, *addr_list, *hostname_suffix, *begin_ipaddress, *end_ipaddress;
     char hostname[256];
     char ipaddress[16];
@@ -115,13 +115,22 @@ enum nss_status _nss_docker_gethostbyname3_r(
         goto return_unavail_errno;
     }
 
-    snprintf(buffer_send, sizeof(buffer_send), DOCKER_API_REQUEST, hostname);
+    buffer_send_len = snprintf(buffer_send, sizeof(buffer_send) - 1, DOCKER_API_REQUEST, hostname);
+
+    if (buffer_send_len == sizeof(buffer_send) - 1) {
+        buffer_send[buffer_send_len] = '\0';
+    }
 
     if (write(sockfd, buffer_send, strlen(buffer_send)) < 0) {
+        close(sockfd);
         goto return_unavail_errno;
     }
 
-    if ((recvlen = read(sockfd, buffer_recv, sizeof(buffer_recv)-1)) <= 0) {
+    recvlen = read(sockfd, buffer_recv, sizeof(buffer_recv)-1);
+
+    close(sockfd);
+
+    if (recvlen <= 0) {
         goto return_unavail_errno;
     }
 
