@@ -42,72 +42,32 @@ AC_CHECK_PROGS([PROVE], [prove])
 AC_CHECK_PROGS([SEQ], [seq gseq])
 AC_PATH_PROG([CHROOT], [chroot], [/usr/sbin/chroot], [/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/bin:/usr/local/sbin:$PATH])
 AC_PATH_PROG([ECHO], [echo], [/bin/echo], [/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/sbin:$PATH])
-AC_PATH_PROG([ENV], [env], [/usr/bin/env], [/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/sbin:$PATH])
-AC_PATH_PROG([ISCHROOT], [ischroot], [/usr/bin/ischroot], [/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/sbin:$PATH])
-AC_PATH_PROG([LDCONFIG], [ldconfig], [/sbin/chroot], [/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/bin:/usr/local/sbin:$PATH])
-AC_PATH_PROG([LDD], [ldd], [/usr/bin/ldd], [/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/sbin:$PATH])
-AC_PATH_PROG([PERL], [perl], [/usr/bin/perl], [/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/sbin:$PATH])
 AC_PATH_PROG([SHELL], [bash ksh sh], [/bin/sh], [/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/bin:/usr/local/sbin:$PATH])
 
-# Checks for compilator features
-ACX_CHECK_C_ALIGNOF
-ACX_CHECK_C_ATTRIBUTE([constructor])
-ACX_CHECK_C_ATTRIBUTE_VISIBILITY
-
-# Checks for libraries.
-AC_CHECK_LIB([dl], [dlsym])
-
 # Checks for header files.
-AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_CHECK_HEADERS(m4_normalize([
-    alloca.h
-    dirent.h
-    dlfcn.h
+    arpa/inet.h
+    config.h
     errno.h
-    fcntl.h
-    ftw.h
-    glob.h
-    libintl.h
-    pwd.h
-    shadow.h
-    signal.h
-    stdarg.h
-    stdint.h
+    netdb.h
+    netinet/in.h
+    nss.h
     stdio.h
     stdlib.h
     string.h
-    sys/inotify.h
-    sys/mount.h
-    sys/param.h
     sys/socket.h
-    sys/stat.h
-    sys/statfs.h
-    sys/statvfs.h
-    sys/syscall.h
-    sys/times.h
     sys/types.h
     sys/un.h
-    sys/vfs.h
-    sys/wait.h
-    sys/xattr.h
     unistd.h
-    utime.h
 ]))
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_TYPE_UID_T
-AC_TYPE_MODE_T
-AC_TYPE_OFF_T
-AC_TYPE_PID_T
 AC_TYPE_SIZE_T
-AC_TYPE_SSIZE_T
-AC_TYPE_UINT32_T
 AC_CHECK_TYPES([ptrdiff_t])
 
 # Checks for additional typedefs.
 AC_CHECK_MEMBERS([struct sockaddr_un.sun_len],,, ACX_INCLUDES_HEADERS([sys/un.h]))
-AC_CHECK_MEMBERS([struct _ftsent.fts_fts],,, ACX_INCLUDES_HEADERS([sys/types.h sys/stat.h fts.h]))
 
 # Checks for library functions.
 AC_CHECK_FUNCS(m4_normalize([
@@ -116,9 +76,8 @@ AC_CHECK_FUNCS(m4_normalize([
     gethostbyname
     gethostbyname2
     gethostbyname3
+    inet_aton
 ]))
-AC_FUNC_ALLOCA
-ASX_NO_CROSS_COMPILING([AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK])
 
 # List of Makefiles
 AC_CONFIG_FILES(m4_normalize([
