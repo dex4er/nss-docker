@@ -138,7 +138,7 @@ enum nss_status _nss_docker_gethostbyname3_r(
 
     if (DEBUG) fwrite(buffer_recv, recvlen, 1, stderr);
 
-    if (strncmp(buffer_recv, HTTP_404, sizeof(HTTP_404)-1) == 0) {
+    if (strncmp(buffer_recv, HTTP_404, sizeof(HTTP_404) - 1) == 0) {
         goto return_notfound;
     }
 
@@ -152,7 +152,7 @@ enum nss_status _nss_docker_gethostbyname3_r(
         goto return_notfound;
     }
 
-    if ((end_ipaddress = index(begin_ipaddress, '"')) == NULL) {
+    if ((end_ipaddress = strchr(begin_ipaddress, '"')) == NULL) {
         goto return_unavail_badmsg;
     }
 

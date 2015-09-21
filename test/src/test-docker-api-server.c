@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
 
         begin_container += sizeof("/containers/") - 1;
 
-        if ((end_container = index(begin_container, '/')) == NULL) {
+        if ((end_container = strchr(begin_container, '/')) == NULL) {
             exit(1);
         }
 
