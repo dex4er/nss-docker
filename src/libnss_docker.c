@@ -35,7 +35,7 @@
 #include <arpa/inet.h>
 
 
-#ifndef DEGUB
+#ifndef DEBUG
 #define DEBUG 0
 #endif
 
@@ -47,8 +47,8 @@
 #define DOCKER_API_VERSION "1.12"
 #endif
 
-#ifndef DOMAIN_SUFFIX
-#define DOMAIN_SUFFIX ".docker"
+#ifndef DOCKER_DOMAIN_SUFFIX
+#define DOCKER_DOMAIN_SUFFIX ".docker"
 #endif
 
 #define ALIGN(a) (((a+sizeof(void*)-1)/sizeof(void*))*sizeof(void*))
@@ -95,11 +95,11 @@ enum nss_status _nss_docker_gethostbyname3_r(
     strncpy(hostname, name, sizeof(hostname));
     hostname[hostnamelen] = '\0';
 
-    if ((hostname_suffix = strstr(hostname, DOMAIN_SUFFIX)) == NULL) {
+    if ((hostname_suffix = strstr(hostname, DOCKER_DOMAIN_SUFFIX)) == NULL) {
         goto return_unavail_addrnotavail;
     }
 
-    if (hostname_suffix[sizeof(DOMAIN_SUFFIX) - 1] != '\0') {
+    if (hostname_suffix[sizeof(DOCKER_DOMAIN_SUFFIX) - 1] != '\0') {
         goto return_unavail_addrnotavail;
     }
 

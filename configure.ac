@@ -32,6 +32,30 @@ AS_IF([test "x$with_libpath" = x],
     [AC_MSG_FAILURE([invalid libpath specified])])
 AC_SUBST(libpath, $with_libpath)
 
+# --with-docker-socket
+AC_MSG_CHECKING([Docker socket path])
+AC_ARG_WITH([docker-socket], [AS_HELP_STRING([--with-docker-socket=/var/run/docker.sock],
+    [Docker socket path])])
+AS_IF([test "x$with_docker_socket" = "x"], [with_docker_socket=/var/run/docker.sock])
+AC_MSG_RESULT([$with_docker_socket])
+AC_DEFINE_UNQUOTED([DOCKER_SOCKET], ["$with_docker_socket"], [Docker socket path])
+
+# --with-docker-api-version
+AC_MSG_CHECKING([Docker API version])
+AC_ARG_WITH([docker-api-version], [AS_HELP_STRING([--with-docker-api-version=1.12],
+    [Docker API version])])
+AS_IF([test "x$with_docker_api_version" = "x"], [with_docker_api_version=1.12])
+AC_MSG_RESULT([$with_docker_api_version])
+AC_DEFINE_UNQUOTED([DOCKER_API_VERSION], ["$with_docker_api_version"], [Docker API version])
+
+# --with-docker-domain-suffix=.docker
+AC_MSG_CHECKING([Docker domain suffix])
+AC_ARG_WITH([docker-domain-suffix], [AS_HELP_STRING([--with-domain-suffix=.docker],
+    [Docker domain suffix])])
+AS_IF([test "x$with_docker_domain_suffix" = "x"], [with_docker_domain_suffix=.docker])
+AC_MSG_RESULT([$with_docker_domain_suffix])
+AC_DEFINE_UNQUOTED([DOCKER_DOMAIN_SUFFIX], ["$with_docker_domain_suffix"], [Docker domain suffix])
+
 # Checks for programs.
 AC_PROG_MAKE_SET
 AM_PROG_LIBTOOL
