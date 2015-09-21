@@ -82,7 +82,7 @@ enum nss_status _nss_docker_gethostbyname3_r(
     hostnamelen = strlen(name);
 
     if (hostnamelen == 0) {
-        goto return_notfound;
+        goto return_unavail_addrnotavail;
     }
 
     if (hostnamelen > 255) {
@@ -93,11 +93,11 @@ enum nss_status _nss_docker_gethostbyname3_r(
     hostname[hostnamelen] = '\0';
 
     if ((hostname_suffix = strstr(hostname, DOMAIN_SUFFIX)) == NULL) {
-        goto return_notfound;
+        goto return_unavail_addrnotavail;
     }
 
     if (hostname_suffix[sizeof(DOMAIN_SUFFIX) - 1] != '\0') {
-        goto return_notfound;
+        goto return_unavail_addrnotavail;
     }
 
     *hostname_suffix = '\0';
@@ -201,6 +201,12 @@ enum nss_status _nss_docker_gethostbyname3_r(
 
 return_unavail_afnosupport:
     *errnop = EAFNOSUPPORT;
+    *herrnop = NO_DATA;
+    return NSS_STATUS_UNAVAIL;
+
+return_unavail_addrnotavail:
+    *errnop = EADDRNOTAVAIL;
+    *herrnop = NO_DATA;
     *herrnop = NO_DATA;
     return NSS_STATUS_UNAVAIL;
 
