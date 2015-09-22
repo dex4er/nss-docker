@@ -44,6 +44,10 @@
 /* #define DOCKER_API_VERSION "1.12" */
 /* #define DOCKER_DOMAIN_SUFFIX ".docker" */
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 255
+#endif
+
 #define ALIGN(a) (((a+sizeof(void*)-1)/sizeof(void*))*sizeof(void*))
 
 #ifndef SUN_LEN
