@@ -246,9 +246,11 @@ enum nss_status _nss_docker_gethostbyname3_r(
 
     /* Prepare hostent result */
     result->h_name = buffer;
-    strcpy(result->h_name, hostname);
 
-    buffer_offset = ALIGN(strlen(hostname) + 1);
+    /* TODO checking for buflen */
+    strcpy(result->h_name, name);
+
+    buffer_offset = ALIGN(strlen(name) + 1);
 
     aliases = buffer + buffer_offset;
     *(char **) aliases = NULL;

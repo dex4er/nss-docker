@@ -19,14 +19,14 @@ $ docker run -d --name test dex4er/alpine-init
 a548fba14c314e77a1630580f6536e09002d84e5610b85a08c622fa451a4f893
 
 $ getent hosts test.docker
-172.17.0.4      test
+172.17.0.4      test.docker
 
 $ ping test.docker
-PING localhost (172.17.0.4) 56(84) bytes of data.
-64 bytes from test.docker (172.17.0.4): icmp_seq=1 ttl=64 time=0.171 ms
+PING test.docker (172.17.0.4) 56(84) bytes of data.
+64 bytes from 172.17.0.4: icmp_seq=1 ttl=64 time=0.171 ms
 ```
 
-This module does not require any additional libraries beside GNU C library.
+This module does not require any additional libraries beside GNU C Library.
 
 ## Installation
 
