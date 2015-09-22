@@ -121,14 +121,16 @@ enum nss_status _nss_docker_gethostbyname3_r(
 
     /* Handle only IPv4 */
     if (af != AF_INET) {
-        goto return_unavail_afnosupport;
+        *errnop = EAFNOSUPPORT;
+        goto return_unavail;
     }
 
     /* Basic assertions for host name */
     name_len = strlen(name);
 
     if (name_len == 0) {
-        goto return_unavail_addrnotavail;
+        *errnop = EADDRNOTAVAIL;
+        goto return_unavail;
     }
 
     if (name_len > 255) {
@@ -140,11 +142,13 @@ enum nss_status _nss_docker_gethostbyname3_r(
 
     /* Handle only .docker domain */
     if ((hostname_suffix_ptr = strstr(hostname, DOCKER_DOMAIN_SUFFIX)) == NULL) {
-        goto return_unavail_addrnotavail;
+        *errnop = EADDRNOTAVAIL;
+        goto return_unavail;
     }
 
     if (hostname_suffix_ptr[sizeof(DOCKER_DOMAIN_SUFFIX) - 1] != '\0') {
-        goto return_unavail_addrnotavail;
+        *errnop = EADDRNOTAVAIL;
+        goto return_unavail;
     }
 
     *hostname_suffix_ptr = '\0';
@@ -156,11 +160,13 @@ enum nss_status _nss_docker_gethostbyname3_r(
     docker_api_addr_len = SUN_LEN(&docker_api_addr);
 
     if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-        goto return_unavail_errno;
+        *errnop = errno;
+        goto return_unavail;
     }
 
     if (connect(sockfd, (struct sockaddr *) &docker_api_addr, docker_api_addr_len) < 0) {
-        goto return_unavail_errno;
+        *errnop = errno;
+        goto return_unavail;
     }
 
     /* Prepare request message */
@@ -173,7 +179,8 @@ enum nss_status _nss_docker_gethostbyname3_r(
     /* Send request */
     if (write(sockfd, req_message_buffer, strlen(req_message_buffer)) < 0) {
         close(sockfd);
-        goto return_unavail_errno;
+        *errnop = errno;
+        goto return_unavail;
     }
 
     /* Receive response */
@@ -182,7 +189,8 @@ enum nss_status _nss_docker_gethostbyname3_r(
     close(sockfd);
 
     if (res_message_len <= 0) {
-        goto return_unavail_errno;
+        *errnop = errno;
+        goto return_unavail;
     }
 
     res_message_buffer[res_message_len] = '\0';
@@ -196,7 +204,8 @@ enum nss_status _nss_docker_gethostbyname3_r(
 
     /* Check if there is IPAddress key */
     if ((begin_ipaddress = strstr(res_message_buffer, FIND_IPADDRESS)) == NULL) {
-        goto return_unavail_badmsg;
+        *errnop = EBADMSG;
+        goto return_unavail;
     }
 
     /* Check if it looks like IPAddress value */
@@ -207,11 +216,13 @@ enum nss_status _nss_docker_gethostbyname3_r(
     }
 
     if ((end_ipaddress = strchr(begin_ipaddress, '"')) == NULL) {
-        goto return_unavail_badmsg;
+        *errnop = EBADMSG;
+        goto return_unavail;
     }
 
     if ((ipaddress_len = end_ipaddress - begin_ipaddress) > 15) {
-        goto return_unavail_badmsg;
+        *errnop = EBADMSG;
+        goto return_unavail;
     }
 
     if (ipaddress_len == 0) {
@@ -225,7 +236,8 @@ enum nss_status _nss_docker_gethostbyname3_r(
 
     /* Convert string to in_addr */
     if (! inet_aton(ipaddress_str, &ipaddress_addr)) {
-        goto return_unavail_badmsg;
+        *errnop = EBADMSG;
+        goto return_unavail;
     }
 
     /* Prepare hostent result */
@@ -255,24 +267,7 @@ enum nss_status _nss_docker_gethostbyname3_r(
 
     return NSS_STATUS_SUCCESS;
 
-return_unavail_afnosupport:
-    *errnop = EAFNOSUPPORT;
-    *herrnop = NO_DATA;
-    return NSS_STATUS_UNAVAIL;
-
-return_unavail_addrnotavail:
-    *errnop = EADDRNOTAVAIL;
-    *herrnop = NO_DATA;
-    *herrnop = NO_DATA;
-    return NSS_STATUS_UNAVAIL;
-
-return_unavail_badmsg:
-    *errnop = EBADMSG;
-    *herrnop = NO_DATA;
-    return NSS_STATUS_UNAVAIL;
-
-return_unavail_errno:
-    *errnop = errno;
+return_unavail:
     *herrnop = NO_DATA;
     return NSS_STATUS_UNAVAIL;
 
