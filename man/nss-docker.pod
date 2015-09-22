@@ -38,6 +38,15 @@ hosts: files docker [NOTFOUND=return] dns
 
 docker(1), nsswitch.conf(5)
 
+=head1 LIMITATIONS
+
+The container ID can't be longer than C<getconf HOST_NAME_MAX> (64 for Linux).
+
+The container ID are case sensitive. It means that C<test.docker> and
+C<Test.docker> can return different IP addresses.
+
+Only IPv4 addresses are supported.
+
 =head1 BUGS
 
 If you find the bug or want to implement new features, please report it at
