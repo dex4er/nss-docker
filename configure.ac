@@ -22,9 +22,9 @@ AC_LANG([C])
 # --disable-static by default
 AC_DISABLE_STATIC
 
-ACX_ARG_WITH_QUOTED([docker-socket], [Docker socket path], [/var/run/docker.sock])
-ACX_ARG_WITH_QUOTED([docker-api-version], [Docker API version], [1.12])
-ACX_ARG_WITH_QUOTED([docker-domain-suffix], [Docker domain suffix], [.docker])
+ACX_ARG_WITH_DEFINE_STRING([docker-socket], [Docker socket path], [/var/run/docker.sock])
+ACX_ARG_WITH_DEFINE_STRING([docker-api-version], [Docker API version], [1.12])
+ACX_ARG_WITH_DEFINE_STRING([docker-domain-suffix], [Docker domain suffix], [.docker])
 
 # Checks for programs.
 AC_PROG_MAKE_SET

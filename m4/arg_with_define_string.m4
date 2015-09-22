@@ -7,9 +7,9 @@
 # License as published by the Free Software Foundation; either
 # version 2.1 of the License, or (at your option) any later version.
 
-# ACX_ARG_WITH_QUOTED([OPTION], [HELP-STRING], [DEFAULT])
+# ACX_ARG_WITH_DEFINE_STRING([OPTION], [HELP-STRING], [DEFAULT])
 # -------------------------------------------------------
-AC_DEFUN([ACX_ARG_WITH_QUOTED], [
+AC_DEFUN([ACX_ARG_WITH_DEFINE_STRING], [
     AC_MSG_CHECKING([$2])
     AC_ARG_WITH([$1], [AS_HELP_STRING([--with-$1=$3], [$2])])
     AS_VAR_IF(AS_TR_SH([with_$1]), [], [
@@ -19,3 +19,4 @@ AC_DEFUN([ACX_ARG_WITH_QUOTED], [
     AC_MSG_RESULT([$]AS_TR_SH([with_$1]))
     AC_DEFINE_UNQUOTED(AS_TR_CPP([$1]), ["$]AS_TR_SH([with_$1])["], [$2])
     AS_VAR_COPY(AS_TR_SH([acx_cv_arg_with_$1]), AS_TR_SH([with_$1]))])
+
