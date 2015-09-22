@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <limits.h>
 #include <nss.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -49,7 +50,10 @@
 #define SUN_LEN(su) (sizeof(*(su)) - sizeof((su)->sun_path) + strlen((su)->sun_path))
 #endif
 
-#define DOCKER_API_REQUEST "GET /v" DOCKER_API_VERSION "/containers/%.32s/json HTTP/1.0\015\012\015\012"
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
+#define DOCKER_API_REQUEST "GET /v" DOCKER_API_VERSION "/containers/%." STR(HOST_NAME_MAX) "s/json HTTP/1.0\015\012\015\012"
 #define HTTP_404 "HTTP/1.0 404"
 #define FIND_IPADDRESS ",\"IPAddress\":\""
 
@@ -59,88 +63,143 @@ enum nss_status _nss_docker_gethostbyname3_r(
     struct hostent *result, char *buffer, size_t buflen, int *errnop,
     int *herrnop, int32_t *ttlp, char **canonp
 ) {
-    size_t idx, recvlen, hostnamelen, ipaddresslen, buffer_send_len;
-    char *aliases, *addr_ptr, *addr_list, *hostname_suffix, *begin_ipaddress, *end_ipaddress;
+    /* full name length */
+    size_t name_len;
+
+    /* hostname is name without domain suffix */
     char hostname[256];
-    char ipaddress[16];
-    struct in_addr addr;
-    int sockfd, servlen;
-    struct sockaddr_un serv_addr;
-    char buffer_send[sizeof(DOCKER_API_REQUEST)+32], buffer_recv[10240];
+
+    /* docker domain suffix starts here */
+    char *hostname_suffix_ptr;
+
+    /* address of Docker API server */
+    struct sockaddr_un docker_api_addr;
+
+    /* length of docker_api_addr structure */
+    socklen_t docker_api_addr_len;
+
+    /* offset for buffer ptr */
+    size_t buffer_offset;
+
+    /* socket descriptor */
+    int sockfd;
+
+    /* request message buffer */
+    char req_message_buffer[sizeof(DOCKER_API_REQUEST) + HOST_NAME_MAX];
+
+    /* request message size */
+    size_t req_message_len;
+
+    /* response message buffer */
+    char res_message_buffer[10240];
+
+    /* response message size */
+    size_t res_message_len;
+
+    /* Buffer for IPAddress string value */
+    char ipaddress_str[16];
+
+    /* Pointers for begin and end of IPAddress value */
+    char *begin_ipaddress, *end_ipaddress;
+
+    /* Length of IPAddress value */
+    size_t ipaddress_len;
+
+    /* IPAddress as in_addr */
+    struct in_addr ipaddress_addr;
+
+    /* List of aliases in hostent */
+    char *aliases;
+
+    /* First address in hostent */
+    char *addr_ptr;
+
+    /* List of addresses in hostent */
+    char *addr_list;
 
     if (DEBUG) fprintf(stderr, "_nss_docker_gethostbyname3_r(name=\"%s\", af=%d)\n", name, af);
 
+    /* Handle only IPv4 */
     if (af != AF_INET) {
         goto return_unavail_afnosupport;
     }
 
-    hostnamelen = strlen(name);
+    /* Basic assertions for host name */
+    name_len = strlen(name);
 
-    if (hostnamelen == 0) {
+    if (name_len == 0) {
         goto return_unavail_addrnotavail;
     }
 
-    if (hostnamelen > 255) {
-        hostnamelen = 255;
+    if (name_len > 255) {
+        name_len = 255;
     }
 
     strncpy(hostname, name, sizeof(hostname));
-    hostname[hostnamelen] = '\0';
+    hostname[name_len] = '\0';
 
-    if ((hostname_suffix = strstr(hostname, DOCKER_DOMAIN_SUFFIX)) == NULL) {
+    /* Handle only .docker domain */
+    if ((hostname_suffix_ptr = strstr(hostname, DOCKER_DOMAIN_SUFFIX)) == NULL) {
         goto return_unavail_addrnotavail;
     }
 
-    if (hostname_suffix[sizeof(DOCKER_DOMAIN_SUFFIX) - 1] != '\0') {
+    if (hostname_suffix_ptr[sizeof(DOCKER_DOMAIN_SUFFIX) - 1] != '\0') {
         goto return_unavail_addrnotavail;
     }
 
-    *hostname_suffix = '\0';
+    *hostname_suffix_ptr = '\0';
 
-    memset((char *) &serv_addr, 0, sizeof(serv_addr));
-    serv_addr.sun_family = AF_UNIX;
-    strcpy(serv_addr.sun_path, DOCKER_SOCKET);
-    servlen = SUN_LEN(&serv_addr);
+    /* Connect to Docker API socket */
+    memset((char *) &docker_api_addr, 0, sizeof(docker_api_addr));
+    docker_api_addr.sun_family = AF_UNIX;
+    strcpy(docker_api_addr.sun_path, DOCKER_SOCKET);
+    docker_api_addr_len = SUN_LEN(&docker_api_addr);
 
     if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
         goto return_unavail_errno;
     }
 
-    if (connect(sockfd, (struct sockaddr *) &serv_addr, servlen) < 0) {
+    if (connect(sockfd, (struct sockaddr *) &docker_api_addr, docker_api_addr_len) < 0) {
         goto return_unavail_errno;
     }
 
-    buffer_send_len = snprintf(buffer_send, sizeof(buffer_send) - 1, DOCKER_API_REQUEST, hostname);
+    /* Prepare request message */
+    req_message_len = snprintf(req_message_buffer, sizeof(req_message_buffer) - 1, DOCKER_API_REQUEST, hostname);
 
-    if (buffer_send_len == sizeof(buffer_send) - 1) {
-        buffer_send[buffer_send_len] = '\0';
+    if (req_message_len == sizeof(req_message_buffer) - 1) {
+        req_message_buffer[req_message_len] = '\0';
     }
 
-    if (write(sockfd, buffer_send, strlen(buffer_send)) < 0) {
+    /* Send request */
+    if (write(sockfd, req_message_buffer, strlen(req_message_buffer)) < 0) {
         close(sockfd);
         goto return_unavail_errno;
     }
 
-    recvlen = read(sockfd, buffer_recv, sizeof(buffer_recv)-1);
+    /* Receive response */
+    res_message_len = read(sockfd, res_message_buffer, sizeof(res_message_buffer) - 1);
 
     close(sockfd);
 
-    if (recvlen <= 0) {
+    if (res_message_len <= 0) {
         goto return_unavail_errno;
     }
 
-    buffer_recv[recvlen] = '\0';
+    res_message_buffer[res_message_len] = '\0';
 
-    if (DEBUG) fwrite(buffer_recv, recvlen, 1, stderr);
+    if (DEBUG) fwrite(res_message_buffer, res_message_len, 1, stderr);
 
-    if (strncmp(buffer_recv, HTTP_404, sizeof(HTTP_404) - 1) == 0) {
+    /* Handle HTTP 404 Not Found */
+    if (strncmp(res_message_buffer, HTTP_404, sizeof(HTTP_404) - 1) == 0) {
         goto return_notfound;
     }
 
-    if ((begin_ipaddress = strstr(buffer_recv, FIND_IPADDRESS)) == NULL) {
+    /* Check if there is IPAddress key */
+    if ((begin_ipaddress = strstr(res_message_buffer, FIND_IPADDRESS)) == NULL) {
         goto return_unavail_badmsg;
     }
 
+    /* Check if it looks like IPAddress value */
     begin_ipaddress += sizeof(FIND_IPADDRESS) - 1;
 
     if (*begin_ipaddress == '"') {
@@ -151,42 +210,44 @@ enum nss_status _nss_docker_gethostbyname3_r(
         goto return_unavail_badmsg;
     }
 
-    if ((ipaddresslen = end_ipaddress - begin_ipaddress) > 15) {
+    if ((ipaddress_len = end_ipaddress - begin_ipaddress) > 15) {
         goto return_unavail_badmsg;
     }
 
-    if (ipaddresslen == 0) {
+    if (ipaddress_len == 0) {
         goto return_notfound;
     }
 
-    strncpy(ipaddress, begin_ipaddress, ipaddresslen);
-    ipaddress[ipaddresslen] = '\0';
+    strncpy(ipaddress_str, begin_ipaddress, ipaddress_len);
+    ipaddress_str[ipaddress_len] = '\0';
 
-    if (DEBUG) fprintf(stderr, "ipaddress=\"%s\"\n", ipaddress);
+    if (DEBUG) fprintf(stderr, "ipaddress_str=\"%s\"\n", ipaddress_str);
 
-    if (! inet_aton(ipaddress, &addr)) {
+    /* Convert string to in_addr */
+    if (! inet_aton(ipaddress_str, &ipaddress_addr)) {
         goto return_unavail_badmsg;
     }
 
+    /* Prepare hostent result */
     result->h_name = buffer;
     strcpy(result->h_name, hostname);
 
-    idx = ALIGN(strlen(hostname) + 1);
+    buffer_offset = ALIGN(strlen(hostname) + 1);
 
-    aliases = buffer + idx;
+    aliases = buffer + buffer_offset;
     *(char **) aliases = NULL;
-    idx += sizeof(char*);
+    buffer_offset += sizeof(char*);
 
     result->h_aliases = (char **) aliases;
 
     result->h_addrtype = AF_INET;
     result->h_length = sizeof(struct in_addr);
 
-    addr_ptr = buffer + idx;
-    memcpy(addr_ptr, &addr, result->h_length);
-    idx += ALIGN(result->h_length);
+    addr_ptr = buffer + buffer_offset;
+    memcpy(addr_ptr, &ipaddress_addr, result->h_length);
+    buffer_offset += ALIGN(result->h_length);
 
-    addr_list = buffer + idx;
+    addr_list = buffer + buffer_offset;
     ((char **) addr_list)[0] = addr_ptr;
     ((char **) addr_list)[1] = NULL;
 
