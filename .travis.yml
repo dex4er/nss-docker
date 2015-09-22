@@ -15,4 +15,4 @@ after_script:
 env:
   matrix:
     - TRAVIS_CC=colorgcc
-    - TRAVIS_CC=clang CFLAGS='-std=c11 -g -O2 -Wall'
+    - TRAVIS_CC=clang CFLAGS='-std=c11 -g -O2 -Wall -Werror'
