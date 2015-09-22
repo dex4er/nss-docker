@@ -22,16 +22,6 @@ AC_LANG([C])
 # --disable-static by default
 AC_DISABLE_STATIC
 
-# --with-libpath
-AC_ARG_WITH([libpath],
-    [AS_HELP_STRING([--with-libpath@<:@=LIBPATH@:>@],
-        [path list where library might be located @<:@default=$pkglibdir@:>@])],
-    [with_libpath=$withval],
-    [with_libpath=$libdir/$PACKAGE_NAME])
-AS_IF([test "x$with_libpath" = x],
-    [AC_MSG_FAILURE([invalid libpath specified])])
-AC_SUBST(libpath, $with_libpath)
-
 # --with-docker-socket
 AC_MSG_CHECKING([Docker socket path])
 AC_ARG_WITH([docker-socket], [AS_HELP_STRING([--with-docker-socket=/var/run/docker.sock],
