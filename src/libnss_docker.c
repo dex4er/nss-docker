@@ -34,22 +34,14 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-
 #ifndef DEBUG
 #define DEBUG 0
 #endif
 
-#ifndef DOCKER_SOCKET
-#define DOCKER_SOCKET "/var/run/docker.sock"
-#endif
-
-#ifndef DOCKER_API_VERSION
-#define DOCKER_API_VERSION "1.12"
-#endif
-
-#ifndef DOCKER_DOMAIN_SUFFIX
-#define DOCKER_DOMAIN_SUFFIX ".docker"
-#endif
+/* defined in config.h */
+/* #define DOCKER_SOCKET "/var/run/docker.sock" */
+/* #define DOCKER_API_VERSION "1.12" */
+/* #define DOCKER_DOMAIN_SUFFIX ".docker" */
 
 #define ALIGN(a) (((a+sizeof(void*)-1)/sizeof(void*))*sizeof(void*))
 
