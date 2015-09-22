@@ -72,7 +72,6 @@ AC_PATH_PROG([SHELL], [bash ksh sh], [/bin/sh], [/usr/sbin:/sbin:/usr/bin:/bin:/
 AC_HEADER_STDC
 AC_CHECK_HEADERS(m4_normalize([
     arpa/inet.h
-    config.h
     errno.h
     netdb.h
     netinet/in.h
