@@ -43,6 +43,7 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS(m4_normalize([
     arpa/inet.h
     errno.h
+    limits.h
     netdb.h
     netinet/in.h
     nss.h
