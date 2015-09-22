@@ -11,9 +11,24 @@ libnss_docker.so.2
 
 =head1 DESCRIPTION
 
-This is NSS module for finding Docker containers.
+This is a plugin for the GNU Name Service Switch (NSS) functionality of the GNU
+C Library (glibc) providing mechanism for finding Docker containers by theirs
+IDs.
 
-=head1 FILES
+The container names are searched in virtual domain name C<.docker>.
+
+The Docker API webservice has to be available as F</var/run/docker.sock> socket
+for current user. Usually it requires to add the user to C<docker> system
+group.
+
+To activate this NSS module, the C<docker> module has to be added to
+F</etc/nsswitch.conf> file in C<hosts:> line.
+
+It is recommended to put the C<docker> module after C<files> module and before
+C<dns> module. C<[NOTFOUND=return]> setting is recommended before C<dns> module
+to prevent using DNS as fallback if the container ID is not found.
+
+=head1 EXAMPLE
 
 =head2 F</etc/nsswitch.conf>
 
