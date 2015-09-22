@@ -277,6 +277,7 @@ return_notfound:
     return NSS_STATUS_NOTFOUND;
 }
 
+
 enum nss_status _nss_docker_gethostbyname2_r(
     const char *name, int af,
     struct hostent *result, char *buffer, size_t buflen, int *errnop,
@@ -287,6 +288,7 @@ enum nss_status _nss_docker_gethostbyname2_r(
         errnop, herrnop, NULL, NULL
     );
 }
+
 
 enum nss_status _nss_docker_gethostbyname_r(
     const char *name,
