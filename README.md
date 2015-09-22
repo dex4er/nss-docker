@@ -1,6 +1,10 @@
 [![Build Status](https://travis-ci.org/dex4er/nss-docker.png?branch=master)](https://travis-ci.org/dex4er/nss-docker)
 
-This is NSS module for finding Docker containers.
+This is a plugin for the GNU Name Service Switch (NSS) functionality of
+the GNU C Library (glibc) providing mechanism for finding Docker
+containers by theirs IDs.
+
+The container names are searched in virtual domain name ".docker".
 
 Install it and add this library to your `/etc/nsswitch.conf` file:
 
@@ -8,7 +12,7 @@ Install it and add this library to your `/etc/nsswitch.conf` file:
 hosts: files docker [NOTFOUND=return] dns
 ```
 
-The container ID is searched in virtual `.docker` domain:
+Then try:
 
 ```
 $ docker run -d --name test dex4er/alpine-init
@@ -20,4 +24,29 @@ $ getent hosts test.docker
 $ ping test.docker
 PING localhost (172.17.0.4) 56(84) bytes of data.
 64 bytes from test.docker (172.17.0.4): icmp_seq=1 ttl=64 time=0.171 ms
+```
+
+This module does not require any additional libraries beside GNU C library.
+
+## Installation
+
+From Git repository:
+
+```
+$ git clone https://github.com/dex4er/nss-docker
+$ ./autogen.sh
+$ ./configure --prefix=/usr
+$ make
+$ sudo make install
+```
+
+## Testing
+
+The tests requires root priviliges (for real chroot because `/etc/nsswitch.conf` can't be changed to another file)
+
+It is suggested to compile necessary files (ie.: mock server) as standard user and run tests as root user.
+
+```
+$ make -C test check-src
+$ sudo make test
 ```
