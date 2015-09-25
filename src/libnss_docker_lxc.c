@@ -1,7 +1,8 @@
 /*
- * nss-docker - NSS plugin for looking up Docker containers
+ * nss-docker-lxc - NSS plugin for looking up Docker and lxc containers
  *
  * Copyright (c) 2015 Piotr Roszatycki <dexter@debian.org>
+ * Copyright (c) 2015 Jay R. Wren <jrwren@xmtp.net>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -34,15 +35,17 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <lxc/lxccontainer.h>
 
 #ifndef DEBUG
-#define DEBUG 0
+#define DEBUG 1
 #endif
 
 /* defined in config.h */
 /* #define DOCKER_SOCKET "/var/run/docker.sock" */
 /* #define DOCKER_API_VERSION "1.12" */
 /* #define DOCKER_DOMAIN_SUFFIX ".docker" */
+/* #define LXC_DOMAIN_SUFFIX ".lxc" */
 
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX 255
@@ -62,7 +65,7 @@
 #define FIND_IPADDRESS ",\"IPAddress\":\""
 
 
-enum nss_status _nss_docker_gethostbyname3_r(
+enum nss_status _nss_docker_lxc_gethostbyname3_r(
     const char *name, int af,
     struct hostent *result, char *buffer, size_t buflen, int *errnop,
     int *herrnop, int32_t *ttlp, char **canonp
@@ -121,7 +124,7 @@ enum nss_status _nss_docker_gethostbyname3_r(
     /* List of addresses in hostent */
     char *addr_list;
 
-    if (DEBUG) fprintf(stderr, "_nss_docker_gethostbyname3_r(name=\"%s\", af=%d)\n", name, af);
+    if (DEBUG) fprintf(stderr, "_nss_docker_lxc_gethostbyname3_r(name=\"%s\", af=%d)\n", name, af);
 
     /* Handle only IPv4 */
     if (af != AF_INET) {
@@ -144,13 +147,38 @@ enum nss_status _nss_docker_gethostbyname3_r(
     strncpy(hostname, name, sizeof(hostname));
     hostname[name_len] = '\0';
 
-    /* Handle only .docker domain */
-    if ((hostname_suffix_ptr = strstr(hostname, DOCKER_DOMAIN_SUFFIX)) == NULL) {
+    /* Handle only .docker or .lxc domain */
+    if ( ((hostname_suffix_ptr = strstr(hostname, LXC_DOMAIN_SUFFIX)) != NULL) &&
+         (hostname_suffix_ptr[sizeof(LXC_DOMAIN_SUFFIX) - 1] == '\0')
+        ) {
+        *hostname_suffix_ptr = '\0';
+        if (DEBUG) fprintf(stderr, "_nss_docker_lxc_gethostbyname3_r(lxc hostname=\"%s\")\n", hostname);
+        char **names;
+        struct lxc_container **cret;
+        int count = list_all_containers("/var/lib/lxc", &names, &cret);
+        for (int i=0; i<count; i++) {
+            if (strncmp(names[i], hostname, name_len) == 0) {
+                if (DEBUG) fprintf(stderr, "_nss_docker_lxc_gethostbyname3_r(found \"%s\", )\n", hostname);
+                struct lxc_container *c = cret[i];
+                if (c->is_running(c)) {
+                    char **addresses = c->get_ips(c, NULL, NULL, 0);
+                    if (addresses) {
+                        char *address = addresses[0];;
+                        strncpy(ipaddress_str, address, 15);
+                    }
+                }
+                goto return_good;
+            }
+        }
+        goto return_unavail;
+    }
+
+    if ((hostname_suffix_ptr = strstr(hostname, DOCKER_DOMAIN_SUFFIX)) == NULL){
         *errnop = EADDRNOTAVAIL;
         goto return_unavail;
     }
 
-    if (hostname_suffix_ptr[sizeof(DOCKER_DOMAIN_SUFFIX) - 1] != '\0') {
+    if (hostname_suffix_ptr[sizeof(DOCKER_DOMAIN_SUFFIX) - 1] != '\0'){
         *errnop = EADDRNOTAVAIL;
         goto return_unavail;
     }
@@ -236,6 +264,7 @@ enum nss_status _nss_docker_gethostbyname3_r(
     strncpy(ipaddress_str, begin_ipaddress, ipaddress_len);
     ipaddress_str[ipaddress_len] = '\0';
 
+return_good:
     if (DEBUG) fprintf(stderr, "ipaddress_str=\"%s\"\n", ipaddress_str);
 
     /* Convert string to in_addr */
@@ -284,26 +313,26 @@ return_notfound:
 }
 
 
-enum nss_status _nss_docker_gethostbyname2_r(
+enum nss_status _nss_docker_lxc_gethostbyname2_r(
     const char *name, int af,
     struct hostent *result, char *buffer, size_t buflen, int *errnop,
     int *herrnop
 ) {
-    return _nss_docker_gethostbyname3_r(
+    return _nss_docker_lxc_gethostbyname3_r(
         name, af, result, buffer, buflen,
         errnop, herrnop, NULL, NULL
     );
 }
 
 
-enum nss_status _nss_docker_gethostbyname_r(
+enum nss_status _nss_docker_lxc_gethostbyname_r(
     const char *name,
     struct hostent *result, char *buffer, size_t buflen, int *errnop,
     int *herrnop
 ) {
     int af = AF_UNSPEC;
 
-    return _nss_docker_gethostbyname3_r(
+    return _nss_docker_lxc_gethostbyname3_r(
         name, af, result, buffer, buflen,
         errnop, herrnop, NULL, NULL
     );
