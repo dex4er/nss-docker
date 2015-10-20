@@ -12,6 +12,7 @@ script:
   - make
   - make test
   - sudo make test
+  - make dist
 after_script:
   - sudo killall -q test-docker-api-server || true
 env:
