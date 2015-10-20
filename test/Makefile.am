@@ -18,6 +18,9 @@ EXTRA_DIST = $(TESTS) \
     touch.inc.sh \
     #
 
+clean-local:
+	-rm -rf testtree-*
+
 check-src:
 	cd src && $(MAKE) $(AM_MAKEFLAGS) check
 
