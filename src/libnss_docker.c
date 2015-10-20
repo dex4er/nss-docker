@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <assert.h>
 #include <limits.h>
 #include <nss.h>
 #include <netdb.h>
@@ -82,6 +83,9 @@ enum nss_status _nss_docker_gethostbyname3_r(
 
     /* length of docker_api_addr structure */
     socklen_t docker_api_addr_len;
+
+    /* calculated buffer size */
+    size_t buffer_size;
 
     /* offset for buffer ptr */
     size_t buffer_offset;
@@ -248,7 +252,13 @@ enum nss_status _nss_docker_gethostbyname3_r(
     /* Prepare hostent result */
     result->h_name = buffer;
 
-    /* TODO checking for buflen */
+    buffer_size = ALIGN(strlen(name) + 1) + sizeof(char*) + ALIGN(sizeof(struct in_addr));
+
+    if (buflen < buffer_size) {
+        *errnop = ENOMEM;
+        goto return_tryagain;
+    }
+
     strcpy(result->h_name, name);
 
     buffer_offset = ALIGN(strlen(name) + 1);
@@ -265,6 +275,7 @@ enum nss_status _nss_docker_gethostbyname3_r(
     addr_ptr = buffer + buffer_offset;
     memcpy(addr_ptr, &ipaddress_addr, result->h_length);
     buffer_offset += ALIGN(result->h_length);
+    assert(buffer_offset == buffer_size);
 
     addr_list = buffer + buffer_offset;
     ((char **) addr_list)[0] = addr_ptr;
@@ -277,6 +288,10 @@ enum nss_status _nss_docker_gethostbyname3_r(
 return_unavail:
     *herrnop = NO_DATA;
     return NSS_STATUS_UNAVAIL;
+
+return_tryagain:
+    *herrnop = NO_RECOVERY;
+    return NSS_STATUS_TRYAGAIN;
 
 return_notfound:
     *errnop = ENOENT;
