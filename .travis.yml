@@ -1,3 +1,4 @@
+sudo: true
 language: c
 before_install:
   - sudo apt-get update -qq
@@ -6,7 +7,10 @@ install:
   - sudo apt-get install -qq automake libtool
   - sudo apt-get install -qq daemon perl
 script:
-  - ./autogen.sh && ./configure CC=$TRAVIS_CC --prefix=/usr && make && make test && sudo make test
+  - ./autogen.sh
+  - ./configure CC=$TRAVIS_CC
+  - make
+  - make test
   - sudo make install
   - sudo sed -i "s/^\(hosts:\).*/\1          files docker dns/" /etc/nsswitch.conf
   - '{ sudo `pwd`/test/src/test-docker-api-server 0 /var/run/docker.sock test 1.2.3.4 & } && sudo getent hosts test.docker | grep ^1.2.3.4'
@@ -14,5 +18,6 @@ after_script:
   - sudo killall test-docker-api-server
 env:
   matrix:
-    - TRAVIS_CC=colorgcc
-    - TRAVIS_CC=clang CFLAGS='-std=c11 -g -O2 -Wall -Werror'
+    - TRAVIS_CC=colorgcc EXTRA_CFLAGS='-Wall -Werror'
+    - TRAVIS_CC=clang EXTRA_CFLAGS='-Wall -Werror'
+    - TRAVIS_CC=clang EXTRA_CFLAGS='-std=c11 -Wall -Werror'
