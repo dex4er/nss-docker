@@ -10,7 +10,9 @@ AM_INIT_AUTOMAKE([1.10 foreign])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AM_MAINTAINER_MODE
 
-AC_SUBST([V])
+AC_ARG_VAR([V], [Verbose output])
+AC_ARG_VAR([EXTRA_CFLAGS], [Extra C compiler flags])
+AC_ARG_VAR([EXTRA_LDFLAGS], [Extra linker flags])
 
 LT_INIT([disable-static])
 AC_SUBST([LT_VERSION_INFO], [2:0:0])
@@ -42,6 +44,7 @@ AC_PATH_PROG([SHELL], [bash ksh sh], [/bin/sh], [/usr/sbin:/sbin:/usr/bin:/bin:/
 AC_HEADER_STDC
 AC_CHECK_HEADERS(m4_normalize([
     arpa/inet.h
+    assert.h
     errno.h
     limits.h
     netdb.h
