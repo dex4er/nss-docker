@@ -11,11 +11,9 @@ script:
   - ./configure CC=$TRAVIS_CC --prefix=/usr
   - make
   - make test
-  - sudo make install
-  - sudo sed -i "s/^\(hosts:\).*/\1          files docker dns/" /etc/nsswitch.conf
-  - '{ sudo `pwd`/test/src/test-docker-api-server 0 /var/run/docker.sock test 1.2.3.4 & } && sudo getent hosts test.docker | grep ^1.2.3.4'
+  - sudo make test
 after_script:
-  - sudo killall test-docker-api-server
+  - sudo killall test-docker-api-server || true
 env:
   matrix:
     - TRAVIS_CC=colorgcc EXTRA_CFLAGS='-Wall -Werror'

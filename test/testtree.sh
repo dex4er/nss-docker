@@ -26,7 +26,8 @@ for d in \
     /usr/lib \
     /usr/sbin \
     /usr/local/bin \
-    /usr/local/lib
+    /usr/local/lib \
+    /var/run
 do
     test -d $d || continue
     mkdir -p $destdir/$d
@@ -146,6 +147,8 @@ do
     test -x $p || continue
     cp -pf $p $destdir/bin
 done
+
+cp -pf ../src/.libs/*.so* $destdir/lib
 
 chflags -R 0 $destdir 2>/dev/null || true
 

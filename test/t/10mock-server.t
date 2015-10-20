@@ -20,6 +20,8 @@ t=`$srcdir/chroot.sh $testtree /bin/test-docker-api-client /tmp/sock 1.19 test 2
 test "$t" != "${t#HTTP/1.0 200 OK}" || not
 ok "chroot docker api mock server returns" `echo $t | tr -c '[:print:]' ' '`
 
+killall test-docker-api-server
+
 test -d "$tmpdir" && rmdir "$tmpdir"
 
 cleanup
