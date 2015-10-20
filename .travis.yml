@@ -8,7 +8,7 @@ install:
   - sudo apt-get install -qq daemon perl
 script:
   - ./autogen.sh
-  - ./configure CC=$TRAVIS_CC
+  - ./configure CC=$TRAVIS_CC --prefix=/usr
   - make
   - make test
   - sudo make install
