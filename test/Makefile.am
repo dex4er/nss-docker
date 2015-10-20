@@ -2,7 +2,8 @@ SUBDIRS = src
 
 TESTS = \
     t/00echo.t \
-    t/mock-server.t \
+    t/10mock-server.t \
+    t/20getent.t \
     #
 
 suffix =
