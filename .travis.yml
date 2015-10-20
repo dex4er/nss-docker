@@ -13,7 +13,7 @@ script:
   - make test
   - sudo make test
 after_script:
-  - sudo killall test-docker-api-server || true
+  - sudo killall -q test-docker-api-server || true
 env:
   matrix:
     - TRAVIS_CC=colorgcc EXTRA_CFLAGS='-Wall -Werror'
