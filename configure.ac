@@ -1,5 +1,5 @@
 AC_PREREQ(2.64)
-AC_INIT([nss-docker], [0.1], [dexter@debian.org], [nss-docker], [https://github.com/dex4er/nss-docker/])
+AC_INIT([nss-docker], [0.01], [dexter@debian.org], [nss-docker], [https://github.com/dex4er/nss-docker/])
 
 AC_CONFIG_SRCDIR([src/libnss_docker.c])
 AC_CONFIG_AUX_DIR([build-aux])
