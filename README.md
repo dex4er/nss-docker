@@ -32,7 +32,7 @@ This module does not require any additional libraries beside GNU C Library.
 
 #### From source archive:
 
-Check the number of the latest release: https://github.com/dex4er/fakechroot/releases/latest
+Check the number of the latest release: https://github.com/dex4er/nss-docker/releases/latest
 
 Then (ie. for 0.01 release):
 
