@@ -1,0 +1,62 @@
+# pod2man --section=8 --release="nss-docker" --center=" " --date="20 Oct 2015"
+#
+
+=head1 NAME
+
+nss-docker - nss module for finding Docker containers
+
+=head1 SYNOPSIS
+
+libnss_docker.so.2
+
+=head1 DESCRIPTION
+
+This is a plugin for the GNU Name Service Switch (NSS) functionality of the GNU
+C Library (glibc) providing mechanism for finding Docker containers by theirs
+IDs.
+
+The container names are searched in virtual domain name C<.docker>.
+
+The Docker API webservice has to be available as F</var/run/docker.sock> socket
+for current user. Usually it requires to add the user to C<docker> system
+group.
+
+To activate this NSS module, the C<docker> module has to be added to
+F</etc/nsswitch.conf> file in C<hosts:> line.
+
+It is recommended to put the C<docker> module after C<files> module and before
+C<dns> module. C<[NOTFOUND=return]> setting is recommended before C<dns> module
+to prevent using DNS as fallback if the container ID is not found.
+
+=head1 EXAMPLE
+
+=head2 F</etc/nsswitch.conf>
+
+hosts: files docker [NOTFOUND=return] dns
+
+=head1 SEE ALSO
+
+docker(1), nsswitch.conf(5)
+
+=head1 LIMITATIONS
+
+The container ID can't be longer than C<getconf HOST_NAME_MAX> (64 for Linux).
+
+The container ID are case sensitive. It means that C<test.docker> and
+C<Test.docker> can return different IP addresses.
+
+Only IPv4 addresses are supported.
+
+=head1 BUGS
+
+If you find the bug or want to implement new features, please report it at
+L<https://github.com/dex4er/nss-docker/issues>
+
+=head1 AUTHORS
+
+Copyright (c) 2015 Piotr Roszatycki <dexter@debian.org>
+
+=head1 COPYING
+
+nss-docker is distributed under the GNU Lesser General Public License (LGPL
+2.1 or greater).
