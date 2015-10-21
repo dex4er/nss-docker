@@ -30,7 +30,20 @@ This module does not require any additional libraries beside GNU C Library.
 
 ## Installation
 
-From Git repository:
+#### From source archive:
+
+Check the number of the latest release: https://github.com/dex4er/fakechroot/releases/latest
+
+Then (ie. for 0.01 release):
+
+```
+$ curl -L https://github.com/dex4er/nss-docker/archive/0.01.tar.gz | tar zxv
+$ ./configure --prefix=/usr
+$ make
+$ sudo make install
+```
+
+#### From Git repository:
 
 ```
 $ git clone https://github.com/dex4er/nss-docker
