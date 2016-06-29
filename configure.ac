@@ -1,5 +1,5 @@
 AC_PREREQ(2.64)
-AC_INIT([nss-docker], [0.01], [dexter@debian.org], [nss-docker], [https://github.com/dex4er/nss-docker/])
+AC_INIT([nss-docker], [0.02], [dexter@debian.org], [nss-docker], [https://github.com/dex4er/nss-docker/])
 
 AC_CONFIG_SRCDIR([src/libnss_docker.c])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -25,7 +25,7 @@ AC_LANG([C])
 AC_DISABLE_STATIC
 
 ACX_ARG_WITH_DEFINE_STRING([docker-socket], [Docker socket path], [/var/run/docker.sock])
-ACX_ARG_WITH_DEFINE_STRING([docker-api-version], [Docker API version], [1.12])
+ACX_ARG_WITH_DEFINE_STRING([docker-api-version], [Docker API version], [1.21])
 ACX_ARG_WITH_DEFINE_STRING([docker-domain-suffix], [Docker domain suffix], [.docker])
 
 # Checks for programs.

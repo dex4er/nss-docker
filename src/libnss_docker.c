@@ -1,7 +1,7 @@
 /*
  * nss-docker - NSS plugin for looking up Docker containers
  *
- * Copyright (c) 2015 Piotr Roszatycki <dexter@debian.org>
+ * Copyright (c) 2015-2016 Piotr Roszatycki <dexter@debian.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,7 +43,7 @@
 
 /* defined in config.h */
 /* #define DOCKER_SOCKET "/var/run/docker.sock" */
-/* #define DOCKER_API_VERSION "1.12" */
+/* #define DOCKER_API_VERSION "1.21" */
 /* #define DOCKER_DOMAIN_SUFFIX ".docker" */
 
 #ifndef HOST_NAME_MAX
@@ -61,6 +61,7 @@
 
 #define DOCKER_API_REQUEST "GET /v" DOCKER_API_VERSION "/containers/%." STR(HOST_NAME_MAX) "s/json HTTP/1.0\015\012\015\012"
 #define HTTP_404 "HTTP/1.0 404"
+#define FIND_NETWORKS ",\"Networks\":{"
 #define FIND_IPADDRESS ",\"IPAddress\":\""
 
 
@@ -107,6 +108,9 @@ enum nss_status _nss_docker_gethostbyname3_r(
 
     /* Buffer for IPAddress string value */
     char ipaddress_str[16];
+
+    /* Pointer for begin of Networks value */
+    char *begin_networks;
 
     /* Pointers for begin and end of IPAddress value */
     char *begin_ipaddress, *end_ipaddress;
@@ -211,8 +215,14 @@ enum nss_status _nss_docker_gethostbyname3_r(
         goto return_notfound;
     }
 
+    /* Check if there is Networks key */
+    if ((begin_networks = strstr(res_message_buffer, FIND_NETWORKS)) == NULL) {
+        /* If not, will search from the beginning */
+        begin_networks = res_message_buffer;
+    }
+
     /* Check if there is IPAddress key */
-    if ((begin_ipaddress = strstr(res_message_buffer, FIND_IPADDRESS)) == NULL) {
+    if ((begin_ipaddress = strstr(begin_networks, FIND_IPADDRESS)) == NULL) {
         *errnop = EBADMSG;
         goto return_unavail;
     }
