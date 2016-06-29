@@ -14,7 +14,7 @@ script:
   - sudo make test
   - make dist
 after_script:
-  - sudo killall -q test-docker-api-server || true
+  - sudo pkill -f test-docker-api-server || true
 env:
   matrix:
     - TRAVIS_CC=colorgcc EXTRA_CFLAGS='-Wall -Werror'
