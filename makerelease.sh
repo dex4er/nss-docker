@@ -10,6 +10,7 @@ test -f "$tarball" || exit 1
 cat > .git/gbp.conf << END
 [import-orig]
 dch = False
+import-msg = New release version %(version)s
 interactive = False
 merge = False
 pristine-tar = False
