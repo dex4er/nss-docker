@@ -22,7 +22,7 @@ t=`$srcdir/chroot.sh $testtree getent hosts test.docker 2>&1`
 test "$t" != "${t#1.2.3.4}" || not
 ok "chroot getent hosts test.docker returns" `echo $t | tr -c '[:print:]' ' '`
 
-killall -q test-docker-api-server || true
+pkill -f test-docker-api-server || true
 
 test -d "$tmpdir" && rmdir "$tmpdir"
 

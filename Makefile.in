@@ -256,6 +256,7 @@ LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 LT_VERSION_INFO = @LT_VERSION_INFO@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
@@ -344,7 +345,7 @@ top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = man src test
-EXTRA_DIST = COPYING LICENSE README.md autogen.sh makedist.sh
+EXTRA_DIST = COPYING LICENSE NEWS.md README.md autogen.sh makedist.sh
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
