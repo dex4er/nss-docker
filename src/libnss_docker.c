@@ -106,6 +106,15 @@ enum nss_status _nss_docker_gethostbyname3_r(
     /* response message size */
     size_t res_message_len;
 
+    /* response partial read size */
+    ssize_t bytes_read;
+
+    /* remaining bytes in the response buffer */
+    size_t remaining;
+
+    /* response message buffer ptr */
+    char *partial_res_message_buffer;
+
     /* Buffer for IPAddress string value */
     char ipaddress_str[16];
 
@@ -197,13 +206,24 @@ enum nss_status _nss_docker_gethostbyname3_r(
     }
 
     /* Receive response */
-    res_message_len = read(sockfd, res_message_buffer, sizeof(res_message_buffer) - 1);
+    res_message_len = 0;
+    partial_res_message_buffer = res_message_buffer;
+    remaining = sizeof(res_message_buffer) - 1;
+    while((bytes_read = read(sockfd, partial_res_message_buffer, remaining)) > 0) {
+      res_message_len += bytes_read;
+      partial_res_message_buffer += bytes_read;
+      remaining -= bytes_read;
+    }
 
     close(sockfd);
 
-    if (res_message_len <= 0) {
+    if (bytes_read < 0) {
         *errnop = errno;
         goto return_unavail;
+    }
+
+    if (res_message_len == 0) {
+      goto return_unavail;
     }
 
     res_message_buffer[res_message_len] = '\0';
