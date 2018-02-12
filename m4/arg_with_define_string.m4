@@ -12,7 +12,7 @@
 AC_DEFUN([ACX_ARG_WITH_DEFINE_STRING], [
     AC_MSG_CHECKING([$2])
     AC_ARG_WITH([$1], [AS_HELP_STRING([--with-$1=$3], [$2])])
-    AS_VAR_IF(AS_TR_SH([with_$1]), [], [
+    AS_VAR_SET_IF(AS_TR_SH([with_$1]), [], [
         AC_CACHE_VAL(AS_TR_SH([acx_cv_arg_with_$1]), [
             AS_VAR_SET(AS_TR_SH([acx_cv_arg_with_$1]), [$3])])
         AS_VAR_COPY(AS_TR_SH([with_$1]), AS_TR_SH([acx_cv_arg_with_$1]))])

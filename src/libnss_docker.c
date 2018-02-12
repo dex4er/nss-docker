@@ -76,9 +76,6 @@ enum nss_status _nss_docker_gethostbyname3_r(
     /* hostname is name without domain suffix */
     char hostname[256];
 
-    /* docker domain suffix starts here */
-    char *hostname_suffix_ptr;
-
     /* address of Docker API server */
     struct sockaddr_un docker_api_addr;
 
@@ -162,18 +159,23 @@ enum nss_status _nss_docker_gethostbyname3_r(
     strncpy(hostname, name, sizeof(hostname));
     hostname[name_len] = '\0';
 
-    /* Handle only .docker domain */
-    if ((hostname_suffix_ptr = strstr(hostname, DOCKER_DOMAIN_SUFFIX)) == NULL) {
-        *errnop = EADDRNOTAVAIL;
-        goto return_unavail;
-    }
+    /* Handle only domains ending with DOCKER_DOMAIN_SUFFIX */
+    if (sizeof(DOCKER_DOMAIN_SUFFIX)) {
+        /* docker domain suffix starts here */
+        char *hostname_suffix_ptr = strstr(hostname, DOCKER_DOMAIN_SUFFIX);
 
-    if (hostname_suffix_ptr[sizeof(DOCKER_DOMAIN_SUFFIX) - 1] != '\0') {
-        *errnop = EADDRNOTAVAIL;
-        goto return_unavail;
-    }
+        if (hostname_suffix_ptr == NULL) {
+            *errnop = EADDRNOTAVAIL;
+            goto return_unavail;
+        }
 
-    *hostname_suffix_ptr = '\0';
+        if (hostname_suffix_ptr[sizeof(DOCKER_DOMAIN_SUFFIX) - 1] != '\0') {
+            *errnop = EADDRNOTAVAIL;
+            goto return_unavail;
+        }
+
+        *hostname_suffix_ptr = '\0';
+    }
 
     /* Connect to Docker API socket */
     memset((char *) &docker_api_addr, 0, sizeof(docker_api_addr));
