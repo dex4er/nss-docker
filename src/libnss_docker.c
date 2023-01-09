@@ -101,7 +101,7 @@ enum nss_status _nss_docker_gethostbyname3_r(
     size_t req_message_len;
 
     /* response message buffer */
-    char res_message_buffer[10240];
+    char res_message_buffer[20480];
 
     /* response message size */
     size_t res_message_len;
